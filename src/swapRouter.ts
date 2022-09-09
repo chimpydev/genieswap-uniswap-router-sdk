@@ -70,9 +70,7 @@ export interface SwapAndAddOptions extends SwapOptions {
 type AnyTradeType =
   | Trade<Currency, Currency, TradeType>
   | V3Trade<Currency, Currency, TradeType>
-  | (
-      | V3Trade<Currency, Currency, TradeType>
-    )[]
+  | (V3Trade<Currency, Currency, TradeType>)[]
 
 /**
  * Represents the Uniswap V2 + V3 SwapRouter02, and has static methods for helping execute trades.
@@ -287,8 +285,7 @@ export abstract class SwapRouter {
     isSwapAndAdd?: boolean
   ): {
     calldatas: string[]
-    sampleTrade:
-      | V3Trade<Currency, Currency, TradeType>
+    sampleTrade: V3Trade<Currency, Currency, TradeType>
     routerMustCustody: boolean
     inputIsNative: boolean
     outputIsNative: boolean
@@ -299,16 +296,11 @@ export abstract class SwapRouter {
     // If dealing with an instance of the aggregated Trade object, unbundle it to individual trade objects.
     if (trades instanceof Trade) {
       invariant(
-        trades.swaps.every(
-          (swap) =>
-            swap.route.protocol == Protocol.V3
-        ),
+        trades.swaps.every((swap) => swap.route.protocol == Protocol.V3),
         'UNSUPPORTED_PROTOCOL'
       )
 
-      let individualTrades: (
-        | V3Trade<Currency, Currency, TradeType>
-      )[] = []
+      let individualTrades: (V3Trade<Currency, Currency, TradeType>)[] = []
 
       for (const { route, inputAmount, outputAmount } of trades.swaps) {
         if (route.protocol == Protocol.V3) {
@@ -332,8 +324,7 @@ export abstract class SwapRouter {
     }
 
     const numberOfTrades = trades.reduce(
-      (numberOfTrades, trade) =>
-        numberOfTrades + (trade instanceof V3Trade ? trade.swaps.length : 1),
+      (numberOfTrades, trade) => numberOfTrades + (trade instanceof V3Trade ? trade.swaps.length : 1),
       0
     )
 
@@ -430,9 +421,7 @@ export abstract class SwapRouter {
     trades:
       | Trade<Currency, Currency, TradeType>
       | V3Trade<Currency, Currency, TradeType>
-      | (
-          | V3Trade<Currency, Currency, TradeType>
-        )[],
+      | (V3Trade<Currency, Currency, TradeType>)[],
     options: SwapOptions
   ): MethodParameters {
     const {
@@ -582,9 +571,7 @@ export abstract class SwapRouter {
   }
 
   private static v3TradeWithHighPriceImpact(
-    trade:
-      | Trade<Currency, Currency, TradeType>
-      | V3Trade<Currency, Currency, TradeType>
+    trade: Trade<Currency, Currency, TradeType> | V3Trade<Currency, Currency, TradeType>
   ): boolean {
     return trade.priceImpact.greaterThan(REFUND_ETH_PRICE_IMPACT_THRESHOLD)
   }
