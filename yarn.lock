@@ -1724,9 +1724,9 @@
     base64-sol "1.0.1"
     hardhat-watcher "^2.1.1"
 
-"@uniswap/v3-sdk@file:uniswap-v3-sdk-v3.9.0.tgz":
+"@uniswap/v3-sdk@github:chimpydev/genieswap-uni-v3-sdk":
   version "3.9.0"
-  resolved "file:uniswap-v3-sdk-v3.9.0.tgz#1d66898584d14ad3fb5c3055f04aa0a86db3a5f8"
+  resolved "https://codeload.github.com/chimpydev/genieswap-uni-v3-sdk/tar.gz/3a8f08d468d566a38d85c639e6fa016d4413cdc9"
   dependencies:
     "@ethersproject/abi" "^5.0.12"
     "@ethersproject/solidity" "^5.0.9"
