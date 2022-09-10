@@ -195,9 +195,8 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
       routev3: V3RouteSDK<TInput, TOutput>
       amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>
     }[],
-    tradeType: TTradeType,
+    tradeType: TTradeType
   ): Promise<Trade<TInput, TOutput, TTradeType>> {
-
     const populatedV3Routes: {
       routev3: V3RouteSDK<TInput, TOutput>
       inputAmount: CurrencyAmount<TInput>
@@ -226,7 +225,6 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
     amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>,
     tradeType: TTradeType
   ): Promise<Trade<TInput, TOutput, TTradeType>> {
-
     let v3Routes: {
       routev3: V3RouteSDK<TInput, TOutput>
       inputAmount: CurrencyAmount<TInput>
