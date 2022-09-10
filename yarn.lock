@@ -1726,7 +1726,7 @@
 
 "@uniswap/v3-sdk@github:chimpydev/genieswap-uni-v3-sdk":
   version "3.9.0"
-  resolved "https://codeload.github.com/chimpydev/genieswap-uni-v3-sdk/tar.gz/3a8f08d468d566a38d85c639e6fa016d4413cdc9"
+  resolved "https://codeload.github.com/chimpydev/genieswap-uni-v3-sdk/tar.gz/11e73dc17a05b42a21ba04efd316b6a8b70ef492"
   dependencies:
     "@ethersproject/abi" "^5.0.12"
     "@ethersproject/solidity" "^5.0.9"
