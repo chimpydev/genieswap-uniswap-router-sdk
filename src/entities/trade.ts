@@ -191,48 +191,18 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
   }
 
   public static async fromRoutes<TInput extends Currency, TOutput extends Currency, TTradeType extends TradeType>(
-    v2Routes: {
-      routev2: V2RouteSDK<TInput, TOutput>
-      amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>
-    }[],
     v3Routes: {
       routev3: V3RouteSDK<TInput, TOutput>
       amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>
     }[],
     tradeType: TTradeType,
-    mixedRoutes?: {
-      mixedRoute: MixedRouteSDK<TInput, TOutput>
-      amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>
-    }[]
   ): Promise<Trade<TInput, TOutput, TTradeType>> {
-    const populatedV2Routes: {
-      routev2: V2RouteSDK<TInput, TOutput>
-      inputAmount: CurrencyAmount<TInput>
-      outputAmount: CurrencyAmount<TOutput>
-    }[] = []
 
     const populatedV3Routes: {
       routev3: V3RouteSDK<TInput, TOutput>
       inputAmount: CurrencyAmount<TInput>
       outputAmount: CurrencyAmount<TOutput>
     }[] = []
-
-    const populatedMixedRoutes: {
-      mixedRoute: MixedRouteSDK<TInput, TOutput>
-      inputAmount: CurrencyAmount<TInput>
-      outputAmount: CurrencyAmount<TOutput>
-    }[] = []
-
-    for (const { routev2, amount } of v2Routes) {
-      const v2Trade = new V2TradeSDK(routev2, amount, tradeType)
-      const { inputAmount, outputAmount } = v2Trade
-
-      populatedV2Routes.push({
-        routev2,
-        inputAmount,
-        outputAmount,
-      })
-    }
 
     for (const { routev3, amount } of v3Routes) {
       const v3Trade = await V3TradeSDK.fromRoute(routev3, amount, tradeType)
@@ -245,37 +215,17 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
       })
     }
 
-    if (mixedRoutes) {
-      for (const { mixedRoute, amount } of mixedRoutes) {
-        const mixedRouteTrade = await MixedRouteTradeSDK.fromRoute(mixedRoute, amount, tradeType)
-        const { inputAmount, outputAmount } = mixedRouteTrade
-
-        populatedMixedRoutes.push({
-          mixedRoute,
-          inputAmount,
-          outputAmount,
-        })
-      }
-    }
-
     return new Trade({
-      v2Routes: populatedV2Routes,
       v3Routes: populatedV3Routes,
-      mixedRoutes: populatedMixedRoutes,
       tradeType,
     })
   }
 
   public static async fromRoute<TInput extends Currency, TOutput extends Currency, TTradeType extends TradeType>(
-    route: V2RouteSDK<TInput, TOutput> | V3RouteSDK<TInput, TOutput> | MixedRouteSDK<TInput, TOutput>,
+    route: V3RouteSDK<TInput, TOutput>,
     amount: TTradeType extends TradeType.EXACT_INPUT ? CurrencyAmount<TInput> : CurrencyAmount<TOutput>,
     tradeType: TTradeType
   ): Promise<Trade<TInput, TOutput, TTradeType>> {
-    let v2Routes: {
-      routev2: V2RouteSDK<TInput, TOutput>
-      inputAmount: CurrencyAmount<TInput>
-      outputAmount: CurrencyAmount<TOutput>
-    }[] = []
 
     let v3Routes: {
       routev3: V3RouteSDK<TInput, TOutput>
@@ -283,32 +233,16 @@ export class Trade<TInput extends Currency, TOutput extends Currency, TTradeType
       outputAmount: CurrencyAmount<TOutput>
     }[] = []
 
-    let mixedRoutes: {
-      mixedRoute: MixedRouteSDK<TInput, TOutput>
-      inputAmount: CurrencyAmount<TInput>
-      outputAmount: CurrencyAmount<TOutput>
-    }[] = []
-
-    if (route instanceof V2RouteSDK) {
-      const v2Trade = new V2TradeSDK(route, amount, tradeType)
-      const { inputAmount, outputAmount } = v2Trade
-      v2Routes = [{ routev2: route, inputAmount, outputAmount }]
-    } else if (route instanceof V3RouteSDK) {
+    if (route instanceof V3RouteSDK) {
       const v3Trade = await V3TradeSDK.fromRoute(route, amount, tradeType)
       const { inputAmount, outputAmount } = v3Trade
       v3Routes = [{ routev3: route, inputAmount, outputAmount }]
-    } else if (route instanceof MixedRouteSDK) {
-      const mixedRouteTrade = await MixedRouteTradeSDK.fromRoute(route, amount, tradeType)
-      const { inputAmount, outputAmount } = mixedRouteTrade
-      mixedRoutes = [{ mixedRoute: route, inputAmount, outputAmount }]
     } else {
       throw new Error('Invalid route type')
     }
 
     return new Trade({
-      v2Routes,
       v3Routes,
-      mixedRoutes,
       tradeType,
     })
   }

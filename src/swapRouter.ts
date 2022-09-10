@@ -7,7 +7,6 @@ import {
   MethodParameters,
   Payments,
   PermitOptions,
-  Pool,
   Position,
   SelfPermit,
   toHex,
@@ -19,13 +18,9 @@ import { ADDRESS_THIS, MSG_SENDER } from './constants'
 import { ApproveAndCall, ApprovalTypes, CondensedAddLiquidityOptions } from './approveAndCall'
 import { Trade } from './entities/trade'
 import { Protocol } from './entities/protocol'
-import { MixedRoute, RouteV2, RouteV3 } from './entities/route'
+import { RouteV3 } from './entities/route'
 import { MulticallExtended, Validation } from './multicallExtended'
 import { PaymentsExtended } from './paymentsExtended'
-import { MixedRouteTrade } from './entities/mixedRoute/trade'
-import { encodeMixedRouteToPath } from './utils/encodeMixedRouteToPath'
-import { MixedRouteSDK } from './entities/mixedRoute/route'
-import { partitionMixedRouteByProtocol, getOutputOfPools } from './utils'
 
 const ZERO = JSBI.BigInt(0)
 const REFUND_ETH_PRICE_IMPACT_THRESHOLD = new Percent(JSBI.BigInt(50), JSBI.BigInt(100))
@@ -159,119 +154,6 @@ export abstract class SwapRouter {
           }
 
           calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactOutput', [exactOutputParams]))
-        }
-      }
-    }
-
-    return calldatas
-  }
-
-  /**
-   * @notice Generates the calldata for a MixedRouteSwap. Since single hop routes are not MixedRoutes, we will instead generate
-   *         them via the existing encodeV3Swap and encodeV2Swap methods.
-   * @param trade The MixedRouteTrade to encode.
-   * @param options SwapOptions to use for the trade.
-   * @param routerMustCustody Flag for whether funds should be sent to the router
-   * @param performAggregatedSlippageCheck Flag for whether we want to perform an aggregated slippage check
-   * @returns A string array of calldatas for the trade.
-   */
-  private static encodeMixedRouteSwap(
-    trade: MixedRouteTrade<Currency, Currency, TradeType>,
-    options: SwapOptions,
-    routerMustCustody: boolean,
-    performAggregatedSlippageCheck: boolean
-  ): string[] {
-    const calldatas: string[] = []
-
-    invariant(trade.tradeType === TradeType.EXACT_INPUT, 'TRADE_TYPE')
-
-    for (const { route, inputAmount, outputAmount } of trade.swaps) {
-      const amountIn: string = toHex(trade.maximumAmountIn(options.slippageTolerance, inputAmount).quotient)
-      const amountOut: string = toHex(trade.minimumAmountOut(options.slippageTolerance, outputAmount).quotient)
-
-      // flag for whether the trade is single hop or not
-      const singleHop = route.pools.length === 1
-
-      const recipient = routerMustCustody
-        ? ADDRESS_THIS
-        : typeof options.recipient === 'undefined'
-        ? MSG_SENDER
-        : validateAndParseAddress(options.recipient)
-
-      const mixedRouteIsAllV3 = (route: MixedRouteSDK<Currency, Currency>) => {
-        return route.pools.every((pool) => pool instanceof Pool)
-      }
-
-      if (singleHop) {
-        /// For single hop, since it isn't really a mixedRoute, we'll just mimic behavior of V3 or V2
-        /// We don't use encodeV3Swap() or encodeV2Swap() because casting the trade to a V3Trade or V2Trade is overcomplex
-        if (mixedRouteIsAllV3(route)) {
-          const exactInputSingleParams = {
-            tokenIn: route.path[0].address,
-            tokenOut: route.path[1].address,
-            fee: (route.pools as Pool[])[0].fee,
-            recipient,
-            amountIn,
-            amountOutMinimum: performAggregatedSlippageCheck ? 0 : amountOut,
-            sqrtPriceLimitX96: 0,
-          }
-
-          calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInputSingle', [exactInputSingleParams]))
-        } else {
-          const path = route.path.map((token) => token.address)
-
-          const exactInputParams = [amountIn, performAggregatedSlippageCheck ? 0 : amountOut, path, recipient]
-
-          calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
-        }
-      } else {
-        const sections = partitionMixedRouteByProtocol(route)
-
-        const isLastSectionInRoute = (i: number) => {
-          return i === sections.length - 1
-        }
-
-        let outputToken
-        let inputToken = route.input.wrapped
-
-        for (let i = 0; i < sections.length; i++) {
-          const section = sections[i]
-          /// Now, we get output of this section
-          outputToken = getOutputOfPools(section, inputToken)
-
-          const newRouteOriginal = new MixedRouteSDK(
-            [...section],
-            section[0].token0.equals(inputToken) ? section[0].token0 : section[0].token1,
-            outputToken
-          )
-          const newRoute = new MixedRoute(newRouteOriginal)
-
-          /// Previous output is now input
-          inputToken = outputToken
-
-          if (mixedRouteIsAllV3(newRoute)) {
-            const path: string = encodeMixedRouteToPath(newRoute)
-            const exactInputParams = {
-              path,
-              // By default router holds funds until the last swap, then it is sent to the recipient
-              // special case exists where we are unwrapping WETH output, in which case `routerMustCustody` is set to true
-              // and router still holds the funds. That logic bundled into how the value of `recipient` is calculated
-              recipient: isLastSectionInRoute(i) ? recipient : ADDRESS_THIS,
-              amountIn: i == 0 ? amountIn : 0,
-              amountOutMinimum: !isLastSectionInRoute(i) ? 0 : amountOut,
-            }
-
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('exactInput', [exactInputParams]))
-          } else {
-            const exactInputParams = [
-              i == 0 ? amountIn : 0, // amountIn
-              !isLastSectionInRoute(i) ? 0 : amountOut, // amountOutMin
-              newRoute.path.map((token) => token.address), // path
-              isLastSectionInRoute(i) ? recipient : ADDRESS_THIS, // to
-            ]
-
-            calldatas.push(SwapRouter.INTERFACE.encodeFunctionData('swapExactTokensForTokens', exactInputParams))
-          }
         }
       }
     }
