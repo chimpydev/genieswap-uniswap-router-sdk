@@ -65,7 +65,7 @@ export interface SwapAndAddOptions extends SwapOptions {
 type AnyTradeType =
   | Trade<Currency, Currency, TradeType>
   | V3Trade<Currency, Currency, TradeType>
-  | (V3Trade<Currency, Currency, TradeType>)[]
+  | V3Trade<Currency, Currency, TradeType>[]
 
 /**
  * Represents the Uniswap V2 + V3 SwapRouter02, and has static methods for helping execute trades.
@@ -182,7 +182,7 @@ export abstract class SwapRouter {
         'UNSUPPORTED_PROTOCOL'
       )
 
-      let individualTrades: (V3Trade<Currency, Currency, TradeType>)[] = []
+      let individualTrades: V3Trade<Currency, Currency, TradeType>[] = []
 
       for (const { route, inputAmount, outputAmount } of trades.swaps) {
         if (route.protocol == Protocol.V3) {
@@ -303,7 +303,7 @@ export abstract class SwapRouter {
     trades:
       | Trade<Currency, Currency, TradeType>
       | V3Trade<Currency, Currency, TradeType>
-      | (V3Trade<Currency, Currency, TradeType>)[],
+      | V3Trade<Currency, Currency, TradeType>[],
     options: SwapOptions
   ): MethodParameters {
     const {
