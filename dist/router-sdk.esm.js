@@ -27,7 +27,6 @@ var ONE = /*#__PURE__*/ JSBI.BigInt(1) // = 1 << 23 or 100000000000000000000000
 var V2_FEE_PATH_PLACEHOLDER = 8388608
 
 var ApprovalTypes
-
 ;(function (ApprovalTypes) {
   ApprovalTypes[(ApprovalTypes['NOT_REQUIRED'] = 0)] = 'NOT_REQUIRED'
   ApprovalTypes[(ApprovalTypes['MAX'] = 1)] = 'MAX'
@@ -838,7 +837,6 @@ function _createForOfIteratorHelperLoose(o, allowArrayLike) {
 }
 
 var Protocol
-
 ;(function (Protocol) {
   Protocol['V2'] = 'V2'
   Protocol['V3'] = 'V3'
